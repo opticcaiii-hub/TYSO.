@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tyso Fine Dining — AI Concierge</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --gold:#C9A84C;--gold-light:#E8D5A3;--gold-dark:#8B6914;
+  --bg:#0A0A08;--bg2:#111109;--bg3:#1A1A14;--bg4:#222218;
+  --text:#F5F0E8;--text2:#B8AE9C;--text3:#7A7268;
+  --border:rgba(201,168,76,0.2);--border2:rgba(201,168,76,0.4);
+  --danger:#C0392B;--success:#27AE60;
+}
+html,body{height:100%;overflow:hidden;font-family:'Jost',sans-serif;background:var(--bg);color:var(--text)}
+#app{display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+#sidebar{width:260px;background:var(--bg2);border-right:0.5px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.logo-area{padding:24px 20px 20px;border-bottom:0.5px solid var(--border)}
+.logo-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;letter-spacing:3px;color:var(--gold)}
+.logo-sub{font-size:10px;letter-spacing:4px;color:var(--text3);margin-top:3px;text-transform:uppercase}
+.nav-btn{display:flex;align-items:center;gap:10px;padding:13px 20px;font-size:13px;color:var(--text2);cursor:pointer;border:none;background:none;width:100%;text-align:left;letter-spacing:0.5px;transition:all 0.2s;border-left:2px solid transparent}
+.nav-btn:hover{background:var(--bg3);color:var(--text)}
+.nav-btn.active{background:var(--bg3);color:var(--gold);border-left-color:var(--gold)}
+.nav-btn svg{width:16px;height:16px;opacity:0.7;flex-shrink:0}
+.nav-btn.active svg{opacity:1}
+.nav-section{padding:16px 20px 8px;font-size:10px;letter-spacing:3px;color:var(--text3);text-transform:uppercase}
+.sidebar-footer{margin-top:auto;padding:16px 20px;border-top:0.5px solid var(--border);font-size:11px;color:var(--text3)}
+.online-dot{width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;margin-right:6px}
+
+/* MAIN */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* HEADER */
+.chat-header{padding:16px 24px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg2);flex-shrink:0}
+.chat-header-left{display:flex;align-items:center;gap:12px}
+.avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--gold-dark),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:14px;color:#0A0A08;font-weight:600;flex-shrink:0}
+.chat-header-name{font-size:14px;font-weight:500;color:var(--text)}
+.chat-header-status{font-size:11px;color:var(--success);margin-top:1px}
+.header-actions{display:flex;gap:8px}
+.icon-btn{background:none;border:0.5px solid var(--border);color:var(--text2);padding:7px;border-radius:6px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;font-family:'Jost',sans-serif;font-size:12px;letter-spacing:0.5px}
+.icon-btn:hover{border-color:var(--gold);color:var(--gold)}
+.icon-btn svg{width:15px;height:15px}
+
+/* MESSAGES */
+#messages{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
+#messages::-webkit-scrollbar{width:4px}
+#messages::-webkit-scrollbar-track{background:transparent}
+#messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.msg-row{display:flex;gap:10px;max-width:100%}
+.msg-row.user{flex-direction:row-reverse}
+.msg-avatar{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;align-self:flex-end}
+.msg-avatar.bot{background:linear-gradient(135deg,var(--gold-dark),var(--gold));color:#0A0A08}
+.msg-avatar.user{background:var(--bg4);color:var(--text2);border:0.5px solid var(--border)}
+.bubble{max-width:72%;padding:12px 16px;border-radius:16px;font-size:13.5px;line-height:1.65;position:relative}
+.bubble.bot{background:var(--bg3);border:0.5px solid var(--border);border-bottom-left-radius:4px;color:var(--text)}
+.bubble.user{background:var(--gold-dark);border-bottom-right-radius:4px;color:#F5F0E8}
+.bubble.bot strong{color:var(--gold);font-weight:500}
+.bubble-time{font-size:10px;color:var(--text3);margin-top:4px;padding:0 4px}
+.msg-row.user .bubble-time{text-align:right}
+.msg-wrap{display:flex;flex-direction:column;max-width:75%}
+
+/* TYPING */
+.typing-indicator{display:flex;gap:4px;padding:4px 0}
+.typing-dot{width:6px;height:6px;background:var(--gold);border-radius:50%;animation:bounce 1.2s infinite}
+.typing-dot:nth-child(2){animation-delay:0.2s}
+.typing-dot:nth-child(3){animation-delay:0.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+/* QUICK REPLIES */
+.quick-replies{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0 0}
+.qr-btn{background:none;border:0.5px solid var(--border2);color:var(--gold-light);padding:7px 14px;border-radius:20px;font-size:12px;cursor:pointer;transition:all 0.2s;font-family:'Jost',sans-serif;letter-spacing:0.3px}
+.qr-btn:hover{background:rgba(201,168,76,0.1);border-color:var(--gold)}
+
+/* CART */
+.cart-bubble{background:var(--bg3);border:0.5px solid var(--border2);border-radius:16px;padding:14px 16px;max-width:360px}
+.cart-bubble h4{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:400;color:var(--gold);margin-bottom:10px;letter-spacing:1px}
+.cart-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--border);gap:10px}
+.cart-item:last-of-type{border-bottom:none}
+.cart-item-name{font-size:13px;color:var(--text);flex:1}
+.cart-item-price{font-size:13px;color:var(--text2);white-space:nowrap}
+.qty-ctrl{display:flex;align-items:center;gap:8px}
+.qty-btn{background:none;border:0.5px solid var(--border2);color:var(--gold);width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0}
+.qty-btn:hover{background:rgba(201,168,76,0.15)}
+.qty-num{font-size:13px;min-width:16px;text-align:center;color:var(--text)}
+.cart-total{display:flex;justify-content:space-between;padding:10px 0 0;font-size:14px;font-weight:500;color:var(--gold);margin-top:6px;border-top:0.5px solid var(--border2)}
+.cart-actions{display:flex;gap:8px;margin-top:12px}
+.cart-btn{flex:1;padding:9px;border-radius:8px;font-size:12px;cursor:pointer;transition:all 0.2s;font-family:'Jost',sans-serif;letter-spacing:0.5px}
+.cart-btn.primary{background:var(--gold);color:#0A0A08;border:none;font-weight:500}
+.cart-btn.primary:hover{background:var(--gold-light)}
+.cart-btn.secondary{background:none;border:0.5px solid var(--border2);color:var(--text2)}
+.cart-btn.secondary:hover{border-color:var(--gold);color:var(--gold)}
+
+/* MENU CARD */
+.menu-cards-wrap{display:flex;flex-direction:column;gap:6px;max-width:360px}
+.menu-card{background:var(--bg3);border:0.5px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.menu-card-info .name{font-size:13.5px;color:var(--text)}
+.menu-card-info .price{font-size:12px;color:var(--gold);margin-top:2px}
+.add-btn{background:none;border:0.5px solid var(--border2);color:var(--gold);padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;transition:all 0.2s;font-family:'Jost',sans-serif;white-space:nowrap}
+.add-btn:hover{background:rgba(201,168,76,0.15)}
+.add-btn.added{background:rgba(201,168,76,0.15);border-color:var(--gold)}
+
+/* HANDOFF */
+.handoff-card{background:rgba(201,168,76,0.06);border:0.5px solid var(--border2);border-radius:12px;padding:14px 16px;max-width:85%}
+.handoff-card p{font-size:13px;color:var(--text2);margin-bottom:10px}
+.whatsapp-btn{display:inline-flex;align-items:center;gap:8px;background:#25D366;color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;text-decoration:none;font-family:'Jost',sans-serif;font-weight:500}
+
+/* INPUT */
+.input-area{padding:16px 24px 20px;background:var(--bg2);border-top:0.5px solid var(--border);flex-shrink:0}
+.input-row{display:flex;gap:10px;align-items:flex-end}
+#userInput{flex:1;background:var(--bg3);border:0.5px solid var(--border);color:var(--text);padding:12px 16px;border-radius:24px;font-size:13.5px;font-family:'Jost',sans-serif;outline:none;transition:border 0.2s;resize:none;max-height:120px;line-height:1.5}
+#userInput::placeholder{color:var(--text3)}
+#userInput:focus{border-color:var(--gold)}
+.send-btn{background:var(--gold);border:none;color:#0A0A08;width:44px;height:44px;border-radius:50%;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.send-btn:hover{background:var(--gold-light)}
+.send-btn svg{width:18px;height:18px}
+.cart-indicator{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(201,168,76,0.08);border:0.5px solid var(--border);border-radius:20px;margin-bottom:10px;cursor:pointer;transition:all 0.2s}
+.cart-indicator:hover{border-color:var(--gold)}
+.cart-indicator span{font-size:12px;color:var(--text2)}
+.cart-indicator strong{color:var(--gold);font-size:12px}
+
+/* ADMIN */
+#adminPanel{display:none;flex:1;flex-direction:column;overflow:hidden}
+.admin-header{padding:20px 28px;border-bottom:0.5px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.admin-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--gold);letter-spacing:2px}
+.admin-body{flex:1;overflow-y:auto;padding:24px 28px}
+.admin-body::-webkit-scrollbar{width:4px}
+.admin-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-card{background:var(--bg3);border:0.5px solid var(--border);border-radius:12px;padding:16px 18px}
+.stat-label{font-size:11px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:8px}
+.stat-value{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--gold)}
+.section-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:300;color:var(--text);letter-spacing:1px;margin-bottom:16px;padding-bottom:8px;border-bottom:0.5px solid var(--border)}
+.table-wrap{background:var(--bg3);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:28px}
+table{width:100%;border-collapse:collapse}
+th{padding:12px 16px;text-align:left;font-size:11px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;border-bottom:0.5px solid var(--border);font-weight:400}
+td{padding:13px 16px;font-size:13px;color:var(--text2);border-bottom:0.5px solid rgba(201,168,76,0.08)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(201,168,76,0.04);color:var(--text)}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;letter-spacing:0.5px}
+.badge.confirmed{background:rgba(39,174,96,0.15);color:#5DD68A}
+.badge.pending{background:rgba(201,168,76,0.15);color:var(--gold)}
+.badge.conflict{background:rgba(192,57,43,0.15);color:#E74C3C}
+.alert-banner{background:rgba(192,57,43,0.1);border:0.5px solid rgba(192,57,43,0.3);border-radius:8px;padding:10px 16px;margin-bottom:20px;font-size:13px;color:#E74C3C;display:none}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000;flex-direction:column}
+.login-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:16px;padding:40px;width:340px}
+.login-logo{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--gold);letter-spacing:3px;text-align:center;margin-bottom:6px}
+.login-sub{font-size:11px;letter-spacing:4px;color:var(--text3);text-align:center;margin-bottom:28px;text-transform:uppercase}
+.login-label{font-size:12px;color:var(--text3);margin-bottom:6px;letter-spacing:1px}
+.login-input{width:100%;background:var(--bg3);border:0.5px solid var(--border);color:var(--text);padding:11px 14px;border-radius:8px;font-size:14px;font-family:'Jost',sans-serif;outline:none;margin-bottom:16px;letter-spacing:4px}
+.login-input:focus{border-color:var(--gold)}
+.login-btn{width:100%;background:var(--gold);color:#0A0A08;border:none;padding:12px;border-radius:8px;font-size:13px;font-family:'Jost',sans-serif;font-weight:500;letter-spacing:1px;cursor:pointer;transition:all 0.2s}
+.login-btn:hover{background:var(--gold-light)}
+.login-err{color:#E74C3C;font-size:12px;text-align:center;margin-top:-8px;margin-bottom:12px;display:none}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">TYSO</div>
+    <div class="login-sub">Admin Dashboard</div>
+    <div class="login-label">Password</div>
+    <input class="login-input" type="password" id="adminPass" placeholder="••••••" maxlength="10">
+    <div class="login-err" id="loginErr">Incorrect password. Please try again.</div>
+    <button class="login-btn" onclick="checkLogin()">Enter Dashboard</button>
+  </div>
+</div>
+
+<div id="app">
+  <div id="sidebar">
+    <div class="logo-area">
+      <div class="logo-title">TYSO</div>
+      <div class="logo-sub">Fine Dining</div>
+    </div>
+    <div class="nav-section">Navigation</div>
+    <button class="nav-btn active" id="navChat" onclick="showView('chat')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+      Live Chat
+    </button>
+    <button class="nav-btn" id="navAdmin" onclick="goAdmin()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Reservations
+    </button>
+    <div class="nav-section">Quick Actions</div>
+    <button class="nav-btn" onclick="injectMsg('What are your opening hours and location?')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      Hours & Location
+    </button>
+    <button class="nav-btn" onclick="injectMsg('Tell me about the dome experience and how to book it')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C6.477 2 2 6.477 2 12h20c0-5.523-4.477-10-10-10z"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="12" x2="12" y2="22"/></svg>
+      Dome Booking
+    </button>
+    <button class="nav-btn" onclick="injectMsg('What decoration packages do you offer and what are the prices?')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Decorations
+    </button>
+    <button class="nav-btn" onclick="injectMsg('Show me the full menu')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Full Menu
+    </button>
+    <div class="sidebar-footer">
+      <span class="online-dot"></span>AI Online &nbsp;·&nbsp; DHA Phase VIII
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="chatView" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+      <div class="chat-header">
+        <div class="chat-header-left">
+          <div class="avatar">T</div>
+          <div>
+            <div class="chat-header-name">Tyso Assistant</div>
+            <div class="chat-header-status">● Online now</div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="icon-btn" onclick="clearCart()" title="Clear cart">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </button>
+          <button class="icon-btn" onclick="clearChat()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+            &nbsp;New Chat
+          </button>
+        </div>
+      </div>
+      <div id="messages"></div>
+      <div class="input-area">
+        <div class="cart-indicator" id="cartIndicator" style="display:none" onclick="showCartSummary()">
+          <span>🛒 <span id="cartCount">0</span> items in cart</span>
+          <strong>PKR <span id="cartTotalIndicator">0</span></strong>
+        </div>
+        <div class="input-row">
+          <textarea id="userInput" rows="1" placeholder="Ask me anything about Tyso..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" onclick="sendMsg()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminPanel">
+      <div class="admin-header">
+        <div class="admin-title">Reservations Dashboard</div>
+        <button class="icon-btn" onclick="showView('chat')" style="gap:6px;padding:8px 14px;border-radius:8px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          &nbsp;Back to Chat
+        </button>
+      </div>
+      <div class="admin-body" id="adminBody"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STEP 1: PASTE YOUR GEMINI API KEY BELOW (between the quotes)
+// Get it free at: https://aistudio.google.com/app/apikey
+// ============================================================
+const GEMINI_KEY = "AIzaSyCPx0FxU4ngbo65eMbE9hx9ci6ajTvvioY";
+// ============================================================
+
+const MENU = {
+  "Chef's Opening Creations": [
+    {name:"Ruby Spiced Chicken Mousse",price:899},
+    {name:"Ember Beef Melt With Cured Yolk",price:1599},
+    {name:"Charred Meat Skewer On Silk Secret Sauce",price:1696},
+    {name:"Duo Millefeuille Royale",price:1595},
+    {name:"Tyso Loaded Mince Fries",price:1495},
+    {name:"Smoky Mince Taco With Jalapeno Aioli",price:1195},
+    {name:"Fire-spiced Mince Canapes",price:1295},
+    {name:"Pong Pong Fish",price:1595},
+    {name:"Crispy Citrus Prawn",price:1695}
+  ],
+  "Fresh Harvest Salads": [
+    {name:"Apple Celery Chicken Salad",price:1195},
+    {name:"Thai-Inspired Cucumber Beef Salad",price:1395}
+  ],
+  "Artisan Poultry Creations": [
+    {name:"Smoky Salsa Chicken Fiesta",price:2195},
+    {name:"Mediterranean Herb Chicken Bowl",price:2295},
+    {name:"Chargrilled Chicken Thigh Supreme",price:2095},
+    {name:"Creamed Spinach Chicken Roulade",price:2095},
+    {name:"Golden Stuffed Chicken Cutlet",price:2395}
+  ],
+  "Prime Beef Signatures": [
+    {name:"Butter Blaze Beef Steak",price:3195},
+    {name:"Herb Infused Tenderloin Steak",price:3295},
+    {name:"Chimichurri Stuffed Beef Roll",price:3095}
+  ],
+  "Signature Pasta Creations": [
+    {name:"Tyso Trio Signature Pasta",price:2195},
+    {name:"Mushroom Cheese Trifecta",price:2295},
+    {name:"Fiery Beef Ragu Pasta",price:2095}
+  ],
+  "Chicken Boti": [
+    {name:"Levant Flame Chicken Boti",price:2299},
+    {name:"Herb Garden Chicken Boti",price:2299},
+    {name:"Basil Infused Flame Boti",price:2399},
+    {name:"Golden Spice Chicken Boti",price:2399}
+  ],
+  "Beef Kabab": [
+    {name:"Beef Kabab",price:1995},
+    {name:"Tyso Trinity Beef Kabab",price:1999},
+    {name:"Beef Cheese Kabab",price:2199},
+    {name:"Smoked Egg Core Kebab",price:2399}
+  ],
+  "Mutton & Chicken Kebab": [
+    {name:"Mutton Kebab (Spicy)",price:2999},
+    {name:"Chicken Kebab",price:1949},
+    {name:"Smoked Egg Core Kebab (Chicken)",price:2199},
+    {name:"Shahi Aroma Kebab",price:2199},
+    {name:"Silken Fire Chicken Kebab",price:2349},
+    {name:"Tyso Trinity Chicken Kebab",price:2199}
+  ],
+  "Beverages": [
+    {name:"Zesty Mint Cooler",price:895},
+    {name:"Tropical Kiwi Breeze",price:945},
+    {name:"F 35",price:915},
+    {name:"Love Ender",price:995},
+    {name:"Blue Hawaiian",price:955},
+    {name:"Wild Mix",price:925},
+    {name:"Lychee Dream",price:965},
+    {name:"Mixologist's Signature",price:1045},
+    {name:"Tyso Signature Coco Paradise",price:1095},
+    {name:"Mocha Frappe",price:995},
+    {name:"Caramel Frappe",price:1025},
+    {name:"Vanilla Frappe",price:1095},
+    {name:"Espresso Shot",price:645},
+    {name:"Macchiato",price:795},
+    {name:"Velvet Cappuccino",price:895},
+    {name:"Latte Supreme",price:995},
+    {name:"Americano",price:925},
+    {name:"Spanish Latte",price:995},
+    {name:"French Vanilla Latte",price:995},
+    {name:"Pistachio Shake",price:1245},
+    {name:"Oreo/Vanilla/Strawberry Shake",price:965},
+    {name:"Apple Iced Tea",price:845},
+    {name:"Apple Beetroot Carrot (ABC) Juice",price:896},
+    {name:"Red Bull",price:995},
+    {name:"Soft Drinks",price:295}
+  ]
+};
+
+let cart = [];
+let reservations = JSON.parse(localStorage.getItem('tyso_reservations') || '[]');
+let conversationHistory = [];
+let isTyping = false;
+
+function buildSystemPrompt() {
+  return `You are Tyso's exclusive AI concierge for Tyso Fine Dining — an upscale restaurant in DHA Phase VIII, Karachi. You speak with warmth, elegance and professionalism. You are not a generic chatbot — you are Tyso's digital host.
+
+RESTAURANT INFO:
+- Name: Tyso Fine Dining
+- Location: 222-C, Lane No 3, Murtaza Commercial, Phase VIII, DHA, Karachi
+- Google Maps: https://share.google/CYVTEcivaa9K65wmU
+- Hours: Monday–Thursday 6:00 PM – 3:00 AM | Friday–Sunday 6:00 PM – 4:00 AM
+- Capacity: 80–90 guests (main hall) | Dome: 7–9 persons exclusively
+- WhatsApp: 03353208628
+
+DOME EXPERIENCE:
+A private, intimate dining dome — perfect for special occasions. Seats 7–9 persons exclusively. Creates a secluded fine dining atmosphere unlike anything else. To book: collect name, contact number, date (day + month + year), time, number of guests (must be 7–9). If fewer than 7 or more than 9, politely explain the capacity limit.
+
+DECORATION PACKAGES:
+- Basic (PKR 5,000): Simple floral setup, balloons, custom banner
+- Standard (PKR 8,000): Themed décor, fresh flowers, candles, LED lights, custom message display
+- Premium (PKR 12,000): Full themed setup, premium florals, photobooth corner, ambient lighting, dedicated host
+- Luxury (PKR 15,000): Grand setup, personalized décor, premium florals, photobooth, ambient lighting, dedicated decorator throughout
+Event Types: Birthday, Anniversary, Proposal, Corporate Events
+To book decoration: collect name, contact number, date (day + month + year), time, type of event, package choice.
+
+RESERVATIONS (Table Booking):
+Collect in this exact order:
+1. Full name
+2. Contact number (Pakistani format)
+3. Date — ask for day, month, and year explicitly
+4. Time — ask for exact time with AM/PM
+5. Number of guests
+Always repeat all details back and ask for confirmation before finalizing.
+Check booked slots below for conflicts — if the same date+time is taken, apologize and suggest nearby time slots.
+
+MENU:
+Full menu is loaded — when customers ask about any dish or category, output the marker [SHOW_ITEMS:CategoryName] to display clickable cards.
+For general browsing output [SHOW_MENU]
+Categories: Chef's Opening Creations, Fresh Harvest Salads, Artisan Poultry Creations, Prime Beef Signatures, Signature Pasta Creations, Chicken Boti, Beef Kabab, Mutton & Chicken Kebab, Beverages
+
+HUMAN HANDOFF:
+If customer is upset, complaining, or asks something you cannot resolve, output [HANDOFF] at the end of your reply.
+
+BOOKING CONFIRMATION:
+When all reservation/dome/decoration details are collected and customer confirms, output this at the very end of your reply (no extra text after it):
+[BOOKING:{"name":"...","phone":"...","date":"...","time":"...","guests":N,"type":"table"}]
+Replace "table" with "dome" or "decoration" accordingly.
+
+CURRENT BOOKED SLOTS (check before confirming any booking):
+${JSON.stringify(reservations.map(r => ({date: r.date, time: r.time, type: r.type})))}
+
+TONE: Warm, refined, never robotic. Use elegant language. Address guests respectfully. You represent a world-class dining experience. Keep responses concise unless detail is requested.`;
+}
+
+function getTime() {
+  return new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
+}
+
+function scrollBottom() {
+  const m = document.getElementById('messages');
+  setTimeout(() => m.scrollTop = m.scrollHeight, 50);
+}
+
+function formatText(t) {
+  return t
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>');
+}
+
+function addMessage(text, sender, extras = {}) {
+  const msgs = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = `msg-row ${sender}`;
+
+  const av = document.createElement('div');
+  av.className = `msg-avatar ${sender}`;
+  av.textContent = sender === 'bot' ? 'T' : 'U';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap';
+
+  if (text) {
+    const b = document.createElement('div');
+    b.className = `bubble ${sender}`;
+    b.innerHTML = formatText(text);
+    wrap.appendChild(b);
+  }
+
+  if (extras.type === 'cart') {
+    const cb = renderCart();
+    cb.id = 'cartBubble_' + Date.now();
+    wrap.appendChild(cb);
+  }
+
+  if (extras.type === 'menu_items' && extras.items) {
+    wrap.appendChild(renderMenuItems(extras.items));
+  }
+
+  if (extras.type === 'handoff') {
+    wrap.appendChild(renderHandoff());
+  }
+
+  if (extras.quickReplies) {
+    const qr = document.createElement('div');
+    qr.className = 'quick-replies';
+    extras.quickReplies.forEach(q => {
+      const btn = document.createElement('button');
+      btn.className = 'qr-btn';
+      btn.textContent = q;
+      btn.onclick = () => { qr.remove(); sendUserMsg(q); };
+      qr.appendChild(btn);
+    });
+    wrap.appendChild(qr);
+  }
+
+  const t = document.createElement('div');
+  t.className = 'bubble-time';
+  t.textContent = getTime();
+  wrap.appendChild(t);
+
+  row.appendChild(av);
+  row.appendChild(wrap);
+  msgs.appendChild(row);
+  scrollBottom();
+}
+
+function renderMenuItems(items) {
+  const div = document.createElement('div');
+  div.className = 'menu-cards-wrap';
+  items.slice(0, 10).forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'menu-card';
+    const inCart = cart.find(c => c.name === item.name);
+    card.innerHTML = `
+      <div class="menu-card-info">
+        <div class="name">${item.name}</div>
+        <div class="price">PKR ${item.price.toLocaleString()}</div>
+      </div>
+      <button class="add-btn ${inCart ? 'added' : ''}" data-name="${item.name}" data-price="${item.price}">
+        ${inCart ? 'Added ✓' : 'Add to Cart'}
+      </button>`;
+    card.querySelector('.add-btn').addEventListener('click', function() {
+      addToCart(item.name, item.price, this);
+    });
+    div.appendChild(card);
+  });
+  return div;
+}
+
+function renderCart() {
+  const div = document.createElement('div');
+  div.className = 'cart-bubble';
+  if (!cart.length) {
+    div.innerHTML = '<h4>Your Cart</h4><p style="color:var(--text3);font-size:13px">Your cart is empty.</p>';
+    return div;
+  }
+  let html = `<h4>Your Order</h4>`;
+  cart.forEach((item, i) => {
+    html += `<div class="cart-item">
+      <div class="cart-item-name">${item.name}</div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="changeQty(${i},-1,this)">−</button>
+        <span class="qty-num">${item.qty}</span>
+        <button class="qty-btn" onclick="changeQty(${i},1,this)">+</button>
+      </div>
+      <div class="cart-item-price">PKR ${(item.price * item.qty).toLocaleString()}</div>
+    </div>`;
+  });
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  html += `<div class="cart-total"><span>Total</span><span>PKR ${total.toLocaleString()}</span></div>`;
+  html += `<div class="cart-actions">
+    <button class="cart-btn secondary" onclick="clearCart()">Clear Cart</button>
+    <button class="cart-btn primary" onclick="confirmOrder()">Confirm Order</button>
+  </div>`;
+  div.innerHTML = html;
+  return div;
+}
+
+function renderHandoff() {
+  const div = document.createElement('div');
+  div.className = 'handoff-card';
+  div.innerHTML = `<p>I'm connecting you with our team right away. They will assist you personally and promptly.</p>
+  <a class="whatsapp-btn" href="https://wa.me/923353208628" target="_blank">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.99 2C6.477 2 2 6.484 2 12.017c0 1.984.528 3.842 1.447 5.445L2 22l4.655-1.418C8.074 21.48 9.987 22 11.99 22c5.514 0 9.99-4.484 9.99-10.017C21.98 6.484 17.504 2 11.99 2z"/></svg>
+    Chat on WhatsApp
+  </a>`;
+  return div;
+}
+
+function addToCart(name, price, btn) {
+  const existing = cart.find(i => i.name === name);
+  if (existing) { existing.qty++; } else { cart.push({name, price, qty: 1}); }
+  btn.textContent = 'Added ✓';
+  btn.classList.add('added');
+  updateCartIndicator();
+}
+
+function changeQty(idx, delta) {
+  cart[idx].qty += delta;
+  if (cart[idx].qty <= 0) cart.splice(idx, 1);
+  updateCartIndicator();
+  showCartSummary();
+}
+
+function clearCart() {
+  cart = [];
+  updateCartIndicator();
+}
+
+function updateCartIndicator() {
+  const ind = document.getElementById('cartIndicator');
+  const count = cart.reduce((s, i) => s + i.qty, 0);
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  document.getElementById('cartCount').textContent = count;
+  document.getElementById('cartTotalIndicator').textContent = total.toLocaleString();
+  ind.style.display = count > 0 ? 'flex' : 'none';
+}
+
+function showCartSummary() {
+  addMessage('Here is your current order:', 'bot', {type: 'cart'});
+}
+
+function confirmOrder() {
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const items = cart.map(i => `${i.qty}x ${i.name} (PKR ${(i.price * i.qty).toLocaleString()})`).join(', ');
+  sendUserMsg(`I'd like to confirm my order: ${items}. Grand Total: PKR ${total.toLocaleString()}`);
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row bot';
+  row.id = 'typingRow';
+  const av = document.createElement('div');
+  av.className = 'msg-avatar bot';
+  av.textContent = 'T';
+  const b = document.createElement('div');
+  b.className = 'bubble bot';
+  b.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+  row.appendChild(av);
+  row.appendChild(b);
+  msgs.appendChild(row);
+  scrollBottom();
+}
+
+function hideTyping() {
+  const t = document.getElementById('typingRow');
+  if (t) t.remove();
+}
+
+async function callGemini(userMsg) {
+  conversationHistory.push({role: "user", parts: [{text: userMsg}]});
+  const body = {
+    contents: [
+      {role: "user", parts: [{text: buildSystemPrompt()}]},
+      {role: "model", parts: [{text: "Understood. I am Tyso's AI concierge, ready to assist guests elegantly."}]},
+      ...conversationHistory
+    ],
+    generationConfig: {temperature: 0.75, maxOutputTokens: 1200}
+  };
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+    {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)}
+  );
+  if (!res.ok) throw new Error('API error ' + res.status);
+  const data = await res.json();
+  const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "I apologize, I'm having a brief moment. Please try again.";
+  conversationHistory.push({role: "model", parts: [{text: reply}]});
+  return reply;
+}
+
+function processBooking(jsonStr) {
+  try {
+    const b = JSON.parse(jsonStr);
+    b.id = Date.now();
+    b.status = 'confirmed';
+    b.bookedAt = new Date().toLocaleString();
+    reservations.push(b);
+    localStorage.setItem('tyso_reservations', JSON.stringify(reservations));
+  } catch(e) { console.error('Booking parse error', e); }
+}
+
+function findMenuItems(text) {
+  const q = text.toLowerCase();
+  for (const [cat, items] of Object.entries(MENU)) {
+    if (q.includes(cat.toLowerCase())) return {cat, items};
+  }
+  const found = [];
+  for (const [cat, items] of Object.entries(MENU)) {
+    items.forEach(item => {
+      const words = item.name.toLowerCase().split(' ');
+      if (words.some(w => w.length > 3 && q.includes(w))) found.push(item);
+    });
+  }
+  return found.length ? {cat: 'Matching Items', items: found} : null;
+}
+
+async function sendUserMsg(text) {
+  if (!text.trim() || isTyping) return;
+  isTyping = true;
+  addMessage(text, 'user');
+  showTyping();
+
+  try {
+    const raw = await callGemini(text);
+    hideTyping();
+
+    let displayText = raw;
+    let extras = {};
+    let handoff = false;
+
+    if (raw.includes('[HANDOFF]')) {
+      displayText = raw.replace('[HANDOFF]', '').trim();
+      handoff = true;
+    }
+
+    const bookingMatch = raw.match(/\[BOOKING:(\{[\s\S]*?\})\]/);
+    if (bookingMatch) {
+      processBooking(bookingMatch[1]);
+      displayText = displayText.replace(bookingMatch[0], '').trim();
+    }
+
+    if (raw.includes('[SHOW_MENU]')) {
+      displayText = displayText.replace('[SHOW_MENU]', '').trim();
+      const allItems = Object.values(MENU).flat().slice(0, 10);
+      extras = {type: 'menu_items', items: allItems};
+    } else {
+      const itemMatch = raw.match(/\[SHOW_ITEMS:(.*?)\]/);
+      if (itemMatch) {
+        const catName = itemMatch[1].trim();
+        displayText = displayText.replace(itemMatch[0], '').trim();
+        const cat = MENU[catName];
+        if (cat) extras = {type: 'menu_items', items: cat};
+      }
+    }
+
+    if (!extras.type) {
+      const textLow = text.toLowerCase();
+      if (textLow.match(/menu|food|eat|order|steak|pasta|chicken|beef|kebab|drink|beverage|salad|boti|prawn|fish|shake|coffee|frappe/)) {
+        const found = findMenuItems(text);
+        if (found) extras = {type: 'menu_items', items: found.items};
+      }
+    }
+
+    if (handoff) extras.type = 'handoff';
+
+    addMessage(displayText.trim(), 'bot', extras);
+
+  } catch(e) {
+    hideTyping();
+    if (GEMINI_KEY === 'PASTE_YOUR_GEMINI_API_KEY_HERE') {
+      addMessage('⚠️ **API Key not set.** Please open this file in a text editor, find `PASTE_YOUR_GEMINI_API_KEY_HERE` and replace it with your Gemini API key from https://aistudio.google.com/app/apikey', 'bot');
+    } else {
+      addMessage("I'm experiencing a brief interruption. Please try again in a moment.", 'bot');
+    }
+  }
+  isTyping = false;
+}
+
+function sendMsg() {
+  const inp = document.getElementById('userInput');
+  const val = inp.value.trim();
+  if (!val) return;
+  inp.value = '';
+  inp.style.height = 'auto';
+  sendUserMsg(val);
+}
+
+function injectMsg(text) {
+  showView('chat');
+  setTimeout(() => sendUserMsg(text), 100);
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function showView(view) {
+  document.getElementById('chatView').style.display = view === 'chat' ? 'flex' : 'none';
+  document.getElementById('adminPanel').style.display = view === 'admin' ? 'flex' : 'none';
+  document.getElementById('navChat').classList.toggle('active', view === 'chat');
+  document.getElementById('navAdmin').classList.toggle('active', view === 'admin');
+  if (view === 'admin') renderAdmin();
+}
+
+function goAdmin() { showView('admin'); }
+
+function renderAdmin() {
+  const body = document.getElementById('adminBody');
+  const conflicts = checkConflicts();
+  const total = reservations.length;
+  const domes = reservations.filter(r => r.type === 'dome').length;
+  const deco = reservations.filter(r => r.type === 'decoration').length;
+  const tables = reservations.filter(r => r.type === 'table').length;
+
+  let html = '';
+  if (conflicts.length) {
+    html += `<div class="alert-banner" style="display:block">⚠ ${conflicts.length} time slot conflict(s) detected — please review the table below.</div>`;
+  }
+  html += `<div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Total Bookings</div><div class="stat-value">${total}</div></div>
+    <div class="stat-card"><div class="stat-label">Table Reservations</div><div class="stat-value">${tables}</div></div>
+    <div class="stat-card"><div class="stat-label">Dome Bookings</div><div class="stat-value">${domes}</div></div>
+    <div class="stat-card"><div class="stat-label">Decorations</div><div class="stat-value">${deco}</div></div>
+  </div>`;
+  html += `<div class="section-title">All Reservations</div>`;
+  if (!reservations.length) {
+    html += `<p style="color:var(--text3);font-size:14px;padding:20px 0">No reservations yet. They will appear here as customers book.</p>`;
+  } else {
+    html += `<div class="table-wrap"><table>
+      <thead><tr><th>Name</th><th>Phone</th><th>Date</th><th>Time</th><th>Guests</th><th>Type</th><th>Booked At</th><th>Status</th></tr></thead>
+      <tbody>`;
+    reservations.forEach((r, i) => {
+      const isConflict = conflicts.includes(i);
+      html += `<tr>
+        <td>${r.name || '—'}</td>
+        <td>${r.phone || '—'}</td>
+        <td>${r.date || '—'}</td>
+        <td>${r.time || '—'}</td>
+        <td>${r.guests || '—'}</td>
+        <td><span class="badge pending">${r.type || 'table'}</span></td>
+        <td style="font-size:11px;color:var(--text3)">${r.bookedAt || '—'}</td>
+        <td><span class="badge ${isConflict ? 'conflict' : 'confirmed'}">${isConflict ? 'Conflict' : 'Confirmed'}</span></td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+  html += `<button onclick="clearReservations()" style="background:none;border:0.5px solid rgba(192,57,43,0.4);color:#E74C3C;padding:10px 20px;border-radius:8px;cursor:pointer;font-family:'Jost',sans-serif;font-size:13px;margin-top:8px">Clear All Reservations</button>`;
+  body.innerHTML = html;
+}
+
+function checkConflicts() {
+  const conflicts = [];
+  reservations.forEach((r, i) => {
+    reservations.forEach((r2, j) => {
+      if (i !== j && r.date === r2.date && r.time === r2.time && r.type === r2.type && !conflicts.includes(i)) {
+        conflicts.push(i);
+      }
+    });
+  });
+  return conflicts;
+}
+
+function clearReservations() {
+  if (confirm('Are you sure you want to clear all reservations? This cannot be undone.')) {
+    reservations = [];
+    localStorage.setItem('tyso_reservations', '[]');
+    renderAdmin();
+  }
+}
+
+function clearChat() {
+  document.getElementById('messages').innerHTML = '';
+  conversationHistory = [];
+  cart = [];
+  updateCartIndicator();
+  init();
+}
+
+function checkLogin() {
+  const pass = document.getElementById('adminPass').value;
+  if (pass === '559049') {
+    document.getElementById('loginScreen').style.display = 'none';
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+    document.getElementById('adminPass').value = '';
+  }
+}
+
+document.getElementById('adminPass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkLogin();
+});
+
+function init() {
+  addMessage(`Welcome to **Tyso Fine Dining** ✦\n\nI'm your personal dining concierge. How may I assist you this evening?`, 'bot', {
+    quickReplies: ['Reserve a Table', 'Dome Booking', 'View Menu', 'Decoration Packages', 'Hours & Location']
+  });
+}
+
+init();
+</script>
+</body>
+</html>
